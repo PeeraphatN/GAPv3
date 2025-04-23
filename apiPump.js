@@ -2,9 +2,9 @@ const axios = require('axios');
 const base64 = require('base-64');
 const cron = require('node-cron');
 
-const TTN_API_KEY = process.env.TTN_API_KEY || "NNSXS.N2H34P6BHQV56AQWERJWIIU3E5UNAD5DHA3KTPI.XKVILFQK5HSSYDRW7PJWPF2BHN57B52H24LXEYZZKGISIVKSOVOQ";
-const APP_ID = process.env.TTN_APP_ID || "test2-app";
-const TTN_ENDPOINT = process.env.TTN_ENDPOINT || "https://mootunlesyslab.as1.cloud.thethings.industries";
+const TTN_API_KEY = process.env.TTN_API_KEY;
+const APP_ID = process.env.TTN_APP_ID;
+const TTN_ENDPOINT = process.env.TTN_ENDPOINT;
 
 let scheduleCache = [];
 
