@@ -21,7 +21,8 @@ async function sendDownlink(device_id, mode, duration = 0) {
             {
                 f_port: 1,
                 frm_payload,
-                priority: "NORMAL"
+                priority: "NORMAL",
+                confirmed: true
             }
         ]
     };
