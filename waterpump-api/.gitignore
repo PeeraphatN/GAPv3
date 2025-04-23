@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# dotenv config
+.env
+
+# Log files
+logs/
+*.log
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Cache
+.npm/
+.eslintcache
+
+# Runtime
+*.pid
+*.pid.lock

@@ -71,21 +71,19 @@ module.exports = function apiPump(app, db, apifunc, dbpackage, listDB, io, urlNg
     updateScheduleCache();
 
     app.post("/api/pump/control", async (req, res) => {
-        const { device_id, action, source, duration = 0 } = req.body;
-
-        if (source === "manual") {
-            mode = action === "on" ? 0x01 :
-                   action === "off" ? 0x03 : null;
-        } else {
-            mode = action === "on" && duration > 0 ? 0x02 :
-                   action === "on" ? 0x01 :
-                   action === "off" ? 0x03 : null;
+        const { device_id, action } = req.body;
+        if (!["on", "off"].includes(action)) {
+            return res.status(400).json({ error: "Invalid action: must be 'on' or 'off'" });
         }
-
-        if (mode === null) return res.status(400).json({ error: "Invalid action" });
-
-        const result = await sendDownlink(device_id, mode, duration);
-
+        const mode = action === "on" ? 0x01 :
+                     action === "off" ? 0x03 : null;
+    
+        if (mode === null) {
+            return res.status(400).json({ error: "Invalid action" });
+        }
+    
+        const result = await sendDownlink(device_id, mode);
+    
         if (!result.success) {
             console.warn(`[TTN ERROR] Device: ${device_id} →`, result.message);
             return res.status(400).json({
@@ -94,14 +92,15 @@ module.exports = function apiPump(app, db, apifunc, dbpackage, listDB, io, urlNg
                 detail: result.detail
             });
         }
-
+    
         await listDB.query(
             `INSERT INTO pump_log (device_id, action, source) VALUES (?, ?, ?)`,
-            [device_id, action, source]
+            [device_id, action, "manual"]
         );
-
+    
         res.json({ status: "pump_control_logged", ...result });
     });
+    
 
     app.post("/api/pump/schedule", async (req, res) => {
         const { device_id, start_time, duration, source = "auto" } = req.body;
@@ -111,7 +110,7 @@ module.exports = function apiPump(app, db, apifunc, dbpackage, listDB, io, urlNg
             return res.status(400).json({ error: "Missing required fields (device_id, start_time, duration)" });
         }
     
-        // ไม่อนุญาตให้ source เป็น manual
+        // not allow manual commands in schedule
         if (source === "manual") {
             return res.status(400).json({ error: "Manual commands are not allowed in schedule" });
         }
@@ -127,6 +126,13 @@ module.exports = function apiPump(app, db, apifunc, dbpackage, listDB, io, urlNg
         }
     
         try {
+            const [existing] = await listDB.query(
+                `SELECT * FROM pump_schedule WHERE device_id = ? AND start_time = ?`,
+                [device_id, start_time]
+            );
+                if (existing.length > 0) {
+                return res.status(409).json({ error: "Schedule already exists for this device and time." });
+            }
             await listDB.query(
                 `INSERT INTO pump_schedule (device_id, start_time, duration) VALUES (?, ?, ?)`,
                 [device_id, start_time, duration]
